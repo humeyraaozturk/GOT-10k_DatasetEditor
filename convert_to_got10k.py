@@ -1,94 +1,174 @@
-"""
-python convert_to_got10k.py --input_dir ./data --output_dir ./got10k_dataset --fps 5 --split train --yolo_results ./yolo_outputs
-"""
-
 import os
 import cv2
 import argparse
 
-def extract_frames(video_path, output_path, fps):
-    cap = cv2.VideoCapture(video_path)
-    video_fps = cap.get(cv2.CAP_PROP_FPS)
-    frame_interval = int(round(video_fps / fps))
+def draw_cross(img, x, y):
+    cv2.line(img, (x, 0), (x, img.shape[0]), (0, 255, 0), 1)
+    cv2.line(img, (0, y), (img.shape[1], y), (0, 255, 0), 1)
 
-    count = 0
+def interactive_selection(video_path, output_dir):
+    cap = cv2.VideoCapture(video_path)
+    if not cap.isOpened():
+        print("[!] Video could not open:", video_path)
+        return None, 0
+
+    frame_idx = 0
+    roi = None
+
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            print("[!] Video end reached, no selection made.")
+            break
+
+        frame_name = f"{frame_idx:08d}.jpg"
+        cv2.imwrite(os.path.join(output_dir, frame_name), frame)
+
+        temp = frame.copy()
+        crosshair_pos = [frame.shape[1]//2, frame.shape[0]//2]
+        selecting = False
+        start_x, start_y = -1, -1
+
+        def mouse_callback(event, x, y, flags, param):
+            nonlocal selecting, start_x, start_y, roi, temp, crosshair_pos
+            crosshair_pos[0], crosshair_pos[1] = x, y
+
+            if event == cv2.EVENT_LBUTTONDOWN:
+                selecting = True
+                start_x, start_y = x, y
+                roi = None
+            elif event == cv2.EVENT_MOUSEMOVE and selecting:
+                x1, y1 = min(start_x, x), min(start_y, y)
+                w, h = abs(start_x - x), abs(start_y - y)
+                roi = (x1, y1, w, h)
+            elif event == cv2.EVENT_LBUTTONUP:
+                selecting = False
+                x1, y1 = min(start_x, x), min(start_y, y)
+                w, h = abs(start_x - x), abs(start_y - y)
+                roi = (x1, y1, w, h)
+
+        cv2.namedWindow("ROI Selection")
+        cv2.setMouseCallback("ROI Selection", mouse_callback)
+
+        while True:
+            display_frame = temp.copy()
+            # Crosshair çiz
+            cv2.line(display_frame, (crosshair_pos[0], 0), (crosshair_pos[0], display_frame.shape[0]), (0, 255, 0), 1)
+            cv2.line(display_frame, (0, crosshair_pos[1]), (display_frame.shape[1], crosshair_pos[1]), (0, 255, 0), 1)
+
+            # ROI çiz
+            if roi and roi[2] > 0 and roi[3] > 0:
+                x, y, w, h = roi
+                cv2.rectangle(display_frame, (x, y), (x + w, y + h), (255, 0, 0), 2)
+
+            cv2.imshow("ROI Selection (Enter: Next, C: Clear, ESC: Exit)", display_frame)
+
+            key = cv2.waitKey(20) & 0xFF
+
+            if key == 13:  # ENTER
+                if roi and roi[2] > 0 and roi[3] > 0:
+                    cap.release()
+                    cv2.destroyAllWindows()
+                    return roi, frame_idx
+                else:
+                    print(f"[i] Frame {frame_idx}: Selection not made, moving to next frame.")
+                    break
+            elif key == ord('c'):
+                roi = None
+                print("[i] Selection cleared.")
+            elif key == 27:  # ESC
+                print("[i] Operation canceled.")
+                cap.release()
+                cv2.destroyAllWindows()
+                return None, -1
+
+        frame_idx += 1
+
+    cap.release()
+    cv2.destroyAllWindows()
+    return None, -1
+
+def extract_remaining_frames(video_path, start_frame_idx, output_dir):
+    cap = cv2.VideoCapture(video_path)
+    if not cap.isOpened():
+        return 0
+
+    cap.set(cv2.CAP_PROP_POS_FRAMES, start_frame_idx + 1)
     saved = 0
-    while cap.isOpened():
+    while True:
         ret, frame = cap.read()
         if not ret:
             break
-        if count % frame_interval == 0:
-            frame_name = f"{saved:08d}.jpg"
-            cv2.imwrite(os.path.join(output_path, frame_name), frame)
-            saved += 1
-        count += 1
+        frame_name = f"{start_frame_idx + 1 + saved:08d}.jpg"
+        cv2.imwrite(os.path.join(output_dir, frame_name), frame)
+        saved += 1
+
     cap.release()
     return saved
 
-def load_yolo_bboxes(yolo_path, frame_count, split):
-    if not os.path.exists(yolo_path):
-        return ["0 0 0 0"] * frame_count
-    with open(yolo_path, 'r') as f:
-        lines = f.readlines()
-    bboxes = []
-    for i in range(frame_count):
-        if i < len(lines):
-            values = lines[i].strip().split()
-            if len(values) == 5:
-                _, x, y, w, h = map(float, values)
-            else:
-                x, y, w, h = map(float, values[:4])  # fallback
-            bboxes.append(f"{x} {y} {w} {h}")
-        else:
-            if split == "test":
-                break
-            bboxes.append("0 0 0 0")
-    return bboxes
+def extract_all_frames(video_path, output_dir):
+    cap = cv2.VideoCapture(video_path)
+    if not cap.isOpened():
+        return 0
+    frame_idx = 0
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            break
+        frame_name = f"{frame_idx:08d}.jpg"
+        cv2.imwrite(os.path.join(output_dir, frame_name), frame)
+        frame_idx += 1
+    cap.release()
+    return frame_idx
 
 def main(args):
     split_dir = os.path.join(args.output_dir, args.split)
     os.makedirs(split_dir, exist_ok=True)
 
     for file in os.listdir(args.input_dir):
-        if not file.lower().endswith(".mp4"):
+        if not file.lower().endswith((".mp4", ".avi", ".mov", ".mkv")):
             continue
 
         name = os.path.splitext(file)[0]
         class_name = name.split('_')[0] if '_' in name else name
-        out_name = f"{class_name}_1"  # istersen video_id'yi otomatik verebiliriz
+        out_name = f"{class_name}_1"
         out_path = os.path.join(split_dir, out_name)
         os.makedirs(out_path, exist_ok=True)
 
         video_path = os.path.join(args.input_dir, file)
-        frame_count = extract_frames(video_path, out_path, args.fps)
 
-        # Load YOLO predictions
-        yolo_txt = os.path.join(args.yolo_results, f"{name}.txt")
-        bboxes = load_yolo_bboxes(yolo_txt, frame_count, args.split)
-
-        gt_path = os.path.join(out_path, "groundtruth.txt")
-        with open(gt_path, "w") as f:
-            if args.split == "test":
-                f.write(bboxes[0] + "\n")
+        if args.split in ["train", "val"]:
+            total_frames = extract_all_frames(video_path, out_path)
+            for label_file in ["absence.label", "cover.label", "cut_by_image.label", "groundtruth.txt"]:
+                open(os.path.join(out_path, label_file), "w").close()  # boş dosyalar
+            print(f"[✓] {file} → {args.split}/{out_name} ({total_frames} frame)")
+        else:  # test
+            print(f"Selection Mode for [i] {file}")
+            roi, selected_frame = interactive_selection(video_path, out_path)
+            if roi is not None and selected_frame >= 0:
+                x, y, w, h = roi
+                # Negatif değerleri düzelt
+                cap = cv2.VideoCapture(video_path)
+                cap.set(cv2.CAP_PROP_POS_FRAMES, selected_frame)
+                ret, frame = cap.read()
+                cap.release()
+                frame_h, frame_w = frame.shape[:2]
+                x = max(0, x)
+                y = max(0, y)
+                w = min(w, frame_w - x)
+                h = min(h, frame_h - y)
+                with open(os.path.join(out_path, "groundtruth.txt"), "w") as f:
+                    f.write(f"{x:.2f} {y:.2f} {w:.2f} {h:.2f}\n")
+                remaining = extract_remaining_frames(video_path, selected_frame, out_path)
+                print(f"[✓] ROI saved ({x},{y},{w},{h}) → {out_name} | Total frames: {selected_frame + 1 + remaining}")
             else:
-                for line in bboxes:
-                    f.write(line + "\n")
-
-        # Optional empty label files (except test)
-        if args.split != "test":
-            for label in ["absence.label", "cover.label", "cut_by_image.label"]:
-                with open(os.path.join(out_path, label), "w") as f:
-                    f.writelines(["0\n"] * frame_count)
-
-        print(f"[✓] {file} → {args.split}/{out_name}")
+                print("[!] ROI not selected.")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--input_dir", required=True, help="Klasör: Videoların bulunduğu dizin")
-    parser.add_argument("--output_dir", required=True, help="GOT-10k ana dizini örn. ./got10k_dataset")
-    parser.add_argument("--fps", type=int, default=30, help="Kaç FPS ile frame çıkarılacak")
-    parser.add_argument("--split", choices=["train", "val", "test"], required=True, help="Veri bölümü: train, val veya test")
-    parser.add_argument("--yolo_results", required=True, help="YOLO çıktılarının bulunduğu klasör")
-
+    parser.add_argument("--input_dir", required=True, help="Video directory")
+    parser.add_argument("--output_dir", required=True, help="GOT10k main directory")
+    parser.add_argument("--split", choices=["train", "val", "test"], required=True)
     args = parser.parse_args()
+
     main(args)

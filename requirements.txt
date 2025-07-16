@@ -1,0 +1,6 @@
+os
+opencv-python
+argparse
+numpy
+ultralytics
+natsort

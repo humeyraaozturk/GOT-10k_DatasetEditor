@@ -1,4 +1,10 @@
 *.jpg
 *.zip
+*.mp4
 data/
 label/
+__pycache__/
+*.pt
+got10k_dataset/
+model_weights/
+yolo_tracker/

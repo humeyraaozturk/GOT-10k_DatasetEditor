@@ -1,6 +1,10 @@
 """
+Yolo formatında etiketlenen görsellerin labels dosya dizini verilerek got10k formatındaki groundtruth.txt dosyasına dönüştürülmesi için kullanılır.
+
+Örnek kullanım:
 python yolo2got10k.py --yolo_dir ./got10k_dataset/train/human_1/labels/ --img_width 1280 --img_height 720 --output_file ./got10k_dataset/train/human_1/groundtruth.txt
 """
+
 import os
 import argparse
 
