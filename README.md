@@ -12,19 +12,7 @@ pip install -r "requirements.txt"
 
 Verdiğiniz klasör dizini içerisindeki videoların kendi fps değerlerine göre framelere ayrılmasını ve got10k uygun dizin dosya yapısının kurulmasını sağlar. ".mp4", ".avi", ".mov", ".mkv" video formatları desteklenir.
 
-### Çalıştırma Komutu:
-
-```bash
-python convert_to_got10k.py --input_dir ./data --output_dir ./got10k_dataset --split test --model ./model_weights/best.pt --fps 20
-```
-
-### \--input\_dir -> Got10k formatına çevirmek istediğiniz videolarınızın bulunduğu dizin
-### \--output\_dir -> Got10k formatında verilerinizin kaydedileceği dizin
-### \--split -> Verilerinizi dönüştürmek istediğiniz format (test, train, val)
-### \--model -> Nesne tespiti için kullanılacak yolo modeli
-### \--fps -> Saniyede işlenecek kare sayısı
-
-got10k veriseti aşağıdaki dizin yapısına sahiptir. --split ile vereceğiniz değere göre videolarınız framelere ayrılacak ve gerekli dosyalar oluşturulacaktır.
+GOT-10k veriseti aşağıdaki dizin yapısına sahiptir. --split ile vereceğiniz değere göre videolarınız framelere ayrılacak ve gerekli dosyalar oluşturulacaktır.
 
 ```
 GOT-10k/
@@ -59,9 +47,23 @@ GOT-10k/
 │   └── ...
 ```
 
+### Çalıştırma Komutu:
+
+```bash
+python convert_to_got10k.py --input_dir ./data --output_dir ./got10k_dataset --split test --model ./model_weights/best.pt --fps 20
+```
+
+### \--input\_dir -> Got10k formatına çevirmek istediğiniz videolarınızın bulunduğu dizin
+### \--output\_dir -> Got10k formatında verilerinizin kaydedileceği dizin
+### \--split -> Verilerinizi dönüştürmek istediğiniz format (test, train, val)
+### \--model -> Nesne tespiti için kullanılacak yolo modeli
+### \--fps -> Saniyede işlenecek kare sayısı
+
+
+
 \--split train ya da val seçmeniz durumunda karşınıza seçtiğiniz videonun ilk karesi açılacak. W tuşuna bastıktan sonra buradan mouse ile takip etmek istediğiniz nesneyi seçmeniz gerekli. Seçim yaptığınız bölgeyi kapsayan en yakın bbox değeri tracker ile takip edilmeye başlanacak. 
 
-Trackerın her frame sonucunda aldığı bbox değeri train/video\_1/groundtruth.txt dosyasında ilgili satıra yazılacak. Bu sayede yolo modeli ile beraber tracker kullanarak verileri hızlı bir şekilde etiketlemiş olacağız.
+Tracker'ın her frame sonucunda aldığı bbox değeri train/car\_1/groundtruth.txt dosyasında ilgili satıra yazılacak. Bu sayede yolo modeli ile beraber tracker kullanarak verileri hızlı bir şekilde etiketlemiş olacağız.
 
 Eğer takip etmek istediğiniz nesne açılan ilk framede değilse enter tuşuna basarak nesneyi görene kadar ilerleyebilirsiniz. Etiket işlemini yaptıktan sonra tracker başlayacak ve video akacaktır. Geri gelmek isterseniz A tuşunu kullanabilirsiniz.
 
@@ -77,7 +79,7 @@ Eğer takip etmek istediğiniz nesne ilk karede yok ise seçim yapmadan enter tu
 
 ## 2) visualize\_groundtruth.py
 
-Bu dosya ile bir önceki adımda groundtruth.txt dosyasına kaydettiğiniz bbox değerlerini her frame üzerinde görebilirsiniz.
+Bu dosya ile bir önceki adımda groundtruth.txt dosyasına kaydettiğiniz bbox değerlerini frameler üzerinde görebilirsiniz.
 Güncellemek istediğiniz label için önce C tuşuna basarak bbox temizleyin. Sonrasında W tuşuna basarak seçim yapabilirsiniz. Seçiminiz bittiğinde enter tuşuna basarsanız bbox değerleriniz groundtruth.txt dosyasındaki ilgili satırda güncellenecektir. Seçim yapmak istemiyorsanız enter basarak ilerleyebilirsiniz. Geri gelmek için A tuşunu kullanabilirsiniz.
 
 ### Çalıştırma Komutu:
