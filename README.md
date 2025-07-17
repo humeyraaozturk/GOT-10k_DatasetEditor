@@ -102,6 +102,7 @@ cover.label dosyasının içeriğini oluşturacağımız bu dosyayı çalıştı
 
 ```bash
 python label_cover.py --images_dir ./got10k_dataset/train/car_1```
+```
 
 ---
 
