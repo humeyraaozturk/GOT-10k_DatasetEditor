@@ -70,10 +70,11 @@ GOT-10k/
 ### Çalıştırma Komutu:
 
 ```bash
-python generate_tracker.py --video_path ./data/video.mp4 --output_dir ./got10k_dataset/train/video_1
+python generate_tracker.py --video_path ./data/car.mp4 --output_dir ./got10k_dataset/train/car_1
 ```
 
-Karşınıza seçtiğiniz videonun ilk karesi yolo modelinizin sonucu ile açılacak. Buradan mouse ile takip etmek istediğiniz nesneyi seçmeniz gerekli. Seçim yaptığınız bölgeyi kapsayan en yakın bbox değeri tracker ile takip edilmeye başlanacak. Trackerın her frame sonucunda aldığı bbox değeri train/video\_1/groundtruth.txt dosyasında ilgili satıra yazılacak. Bu sayede yolo modeli ile beraber tracker kullanarak verileri hızlı bir şekilde etiketlemiş olacağız.
+Karşınıza seçtiğiniz videonun ilk karesi yolo modelinizin sonucu ile açılacak. W tuşuna bastıktan sonra buradan mouse ile takip etmek istediğiniz nesneyi seçmeniz gerekli. Seçim yaptığınız bölgeyi kapsayan en yakın bbox değeri tracker ile takip edilmeye başlanacak. Trackerın her frame sonucunda aldığı bbox değeri train/video\_1/groundtruth.txt dosyasında ilgili satıra yazılacak. Bu sayede yolo modeli ile beraber tracker kullanarak verileri hızlı bir şekilde etiketlemiş olacağız.
+Eğer takip etmek istediğiniz nesne açılan ilk framede değilse enter tuşuna basarak nesneyi görene kadar ilerleyebilirsiniz. Etiket işlemini yaptıktan sonra tracker başlayacak ve video akacaktır.
 
 ### absence.label -> Takip edilecek nesnenin kare içerisinde olup (0) olmadığı (1) bilgisini her kare için bir satırda saklar.
 ### cover.label -> Takip edilecek nesnenin önünde engel olup (1) olmadığı (0) bilgisini saklar.
@@ -89,12 +90,22 @@ Güncellemek istediğiniz label için önce C tuşuna basarak bbox temizleyin. S
 ### Çalıştırma Komutu:
 
 ```bash
-python visualize_groundtruth.py --images_dir ./got10k_dataset/train/video_1/
+python visualize_groundtruth.py --images_dir ./got10k_dataset/train/car_1/
 ```
 
 ---
 
-## 4) yolo2got10k.py
+## 4) label_cover.py
+cover.label dosyasının içeriğini oluşturacağımız bu dosyayı çalıştırdığınızda karşınıza nesne tespiti sonucu etiketlenen bbox görselleri açılacak. Nesne önünde engel var ise 0 yok ise 1 tuşuna basarak cover.label dosyasının verisini oluşturabilirsiniz. Geri gitmek için A tuşunu kullanabilirsiniz.
+
+### Çalıştırma Komutu:
+
+```bash
+python label_cover.py --images_dir ./got10k_dataset/train/car_1```
+
+---
+
+## 5) yolo2got10k.py
 
 Elinizde hazır yolo formatında etiketlenmiş ve içinde her frame için bir .txt dosyası bulunduran labels klasörünüz varsa bu dosya yardımıyla bbox bilgisini içeren tek bir groundtruth.txt dosyası altında verilerinizi toplayabilirsiniz.
 ## NOT: GOT10K tekli nesne tespit verisetidir. Bu dosya için vereceğiniz labels klasörü altındaki txt dosyalarında tek satır bbox bilgisi olmalıdır. Birden fazla etiket bilgisi olması durumunda hata alabilirsiniz.
@@ -102,7 +113,7 @@ Elinizde hazır yolo formatında etiketlenmiş ve içinde her frame için bir .t
 ### Çalıştırma Komutu:
 
 ```bash
-python yolo2got10k.py --yolo_dir ./path/to/your/labels/ --img_width 1280 --img_height 720 --output_file ./got10k_dataset/train/video_1/groundtruth.txt
+python yolo2got10k.py --yolo_dir ./path/to/your/labels/ --img_width 1280 --img_height 720 --output_file ./got10k_dataset/train/car_1/groundtruth.txt
 ```
 
 #### Yolo normalize edilmiş bbox verisi kullanırken got10k normalize edilmemiş bbox verisi kullanır. Bu yüzden burada verilecek img\_width ve img\_height değerleri görselin orijinal değerleri olmalıdır.
