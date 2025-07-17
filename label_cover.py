@@ -3,8 +3,7 @@ import os
 import argparse
 from natsort import natsorted
 
-def resize_frame_for_display(frame, max_width=900, max_height=700):
-    """Görüntüyü max boyuta göre ölçekle"""
+def resize_frame_for_display(frame, max_width=600, max_height=400):
     h, w = frame.shape[:2]
     scale = min(max_width / w, max_height / h)
     new_w, new_h = int(w * scale), int(h * scale)
@@ -29,7 +28,7 @@ def crop_frame(frame, bbox):
 def main(images_dir):
     gt_path = os.path.join(images_dir, "groundtruth.txt")
     if not os.path.exists(gt_path):
-        print("[!] groundtruth.txt bulunamadı.")
+        print("[!] groundtruth.txt not found.")
         return
 
     image_files = [f for f in os.listdir(images_dir) if f.lower().endswith(('.jpg','.png','.jpeg'))]
@@ -43,7 +42,7 @@ def main(images_dir):
 
     idx = 0
     cv2.namedWindow("Cover Labeling", cv2.WINDOW_NORMAL)
-    cv2.resizeWindow("Cover Labeling", 900, 700)
+    cv2.resizeWindow("Cover Labeling", 600, 400)
 
     while 0 <= idx < total_frames:
         bbox = bboxes[idx]
@@ -63,14 +62,11 @@ def main(images_dir):
         display = cropped if cropped is not None else frame.copy()
 
         display = resize_frame_for_display(display)
-        cv2.putText(display,
-                    f"Frame {idx+1}/{total_frames} | [0] No Cover, [1] Covered, [ENTER] Skip, [A] Back",
-                    (10, 40), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
-
+        
         cv2.imshow("Cover Labeling", display)
 
         key = cv2.waitKey(0) & 0xFF
-        if key == 27:  # ESC çık
+        if key == 27:  # ESC exit
             break
         elif key == ord('0'):
             cover_data[idx] = "0\n"
@@ -89,7 +85,7 @@ def main(images_dir):
         f.writelines(cover_data)
 
     cv2.destroyAllWindows()
-    print("[✓] Labelleme tamamlandı:", cover_path)
+    print("[✓] Labeling completed:", cover_path)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

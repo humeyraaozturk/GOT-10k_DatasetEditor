@@ -1,10 +1,3 @@
-"""
-Got10k formatında etiketleri bulunduran groundtruth.txt dosyasının etiketlerini görselleştirmek için kullanılır.
-
-Örnek Kullanım:
-python visualize_groundtruth.py --images_dir ./got10k_dataset/train/car_1/ 
-"""
-
 import cv2
 import os
 import argparse
@@ -32,7 +25,6 @@ def resize_for_display(frame, max_width=800, max_height=600):
     resized = cv2.resize(frame, (new_w, new_h))
     return resized, scale
 
-# Mouse callback için global değişken
 mouse_x, mouse_y = -1, -1
 def mouse_move(event, x, y, flags, param):
     global mouse_x, mouse_y

@@ -6,10 +6,17 @@ def draw_cross(img, x, y):
     cv2.line(img, (x, 0), (x, img.shape[0]), (0, 255, 0), 1)
     cv2.line(img, (0, y), (img.shape[1], y), (0, 255, 0), 1)
 
+def resize_for_display(frame, max_width=900, max_height=600):
+    h, w = frame.shape[:2]
+    scale = min(max_width / w, max_height / h, 1.0)  # Daha büyükse küçült, küçükse aynı kal
+    new_w, new_h = int(w * scale), int(h * scale)
+    resized = cv2.resize(frame, (new_w, new_h))
+    return resized, scale
+
 def interactive_selection(video_path, output_dir):
     cap = cv2.VideoCapture(video_path)
     if not cap.isOpened():
-        print("[!] Video could not open:", video_path)
+        print("[!] Video could not be opened:", video_path)
         return None, 0
 
     frame_idx = 0
@@ -24,10 +31,11 @@ def interactive_selection(video_path, output_dir):
         frame_name = f"{frame_idx:08d}.jpg"
         cv2.imwrite(os.path.join(output_dir, frame_name), frame)
 
-        temp = frame.copy()
-        crosshair_pos = [frame.shape[1]//2, frame.shape[0]//2]
+        scaled_frame, scale = resize_for_display(frame)
+        crosshair_pos = [scaled_frame.shape[1]//2, scaled_frame.shape[0]//2]
         selecting = False
         start_x, start_y = -1, -1
+        temp = scaled_frame.copy()
 
         def mouse_callback(event, x, y, flags, param):
             nonlocal selecting, start_x, start_y, roi, temp, crosshair_pos
@@ -47,8 +55,8 @@ def interactive_selection(video_path, output_dir):
                 w, h = abs(start_x - x), abs(start_y - y)
                 roi = (x1, y1, w, h)
 
-        cv2.namedWindow("ROI Selection")
-        cv2.setMouseCallback("ROI Selection", mouse_callback)
+        cv2.namedWindow("ROI Selection (Enter: Next, C: Clear, ESC: Exit)")
+        cv2.setMouseCallback("ROI Selection (Enter: Next, C: Clear, ESC: Exit)", mouse_callback)
 
         while True:
             display_frame = temp.copy()
@@ -67,9 +75,13 @@ def interactive_selection(video_path, output_dir):
 
             if key == 13:  # ENTER
                 if roi and roi[2] > 0 and roi[3] > 0:
+                    real_x = int(roi[0] / scale)
+                    real_y = int(roi[1] / scale)
+                    real_w = int(roi[2] / scale)
+                    real_h = int(roi[3] / scale)
                     cap.release()
                     cv2.destroyAllWindows()
-                    return roi, frame_idx
+                    return (real_x, real_y, real_w, real_h), frame_idx
                 else:
                     print(f"[i] Frame {frame_idx}: Selection not made, moving to next frame.")
                     break
@@ -143,7 +155,7 @@ def main(args):
                 open(os.path.join(out_path, label_file), "w").close()  # boş dosyalar
             print(f"[✓] {file} → {args.split}/{out_name} ({total_frames} frame)")
         else:  # test
-            print(f"Selection Mode for [i] {file}")
+            print(f"Selection mode for [i] {file} ...")
             roi, selected_frame = interactive_selection(video_path, out_path)
             if roi is not None and selected_frame >= 0:
                 x, y, w, h = roi
