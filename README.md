@@ -59,15 +59,15 @@ GOT-10k/
 │   └── ...
 ```
 
-#### \--split train ya da val seçmeniz durumunda karşınıza seçtiğiniz videonun ilk karesi açılacak. W tuşuna bastıktan sonra buradan mouse ile takip etmek istediğiniz nesneyi seçmeniz gerekli. Seçim yaptığınız bölgeyi kapsayan en yakın bbox değeri tracker ile takip edilmeye başlanacak. 
+\--split train ya da val seçmeniz durumunda karşınıza seçtiğiniz videonun ilk karesi açılacak. W tuşuna bastıktan sonra buradan mouse ile takip etmek istediğiniz nesneyi seçmeniz gerekli. Seçim yaptığınız bölgeyi kapsayan en yakın bbox değeri tracker ile takip edilmeye başlanacak. 
 
-#### Trackerın her frame sonucunda aldığı bbox değeri train/video\_1/groundtruth.txt dosyasında ilgili satıra yazılacak. Bu sayede yolo modeli ile beraber tracker kullanarak verileri hızlı bir şekilde etiketlemiş olacağız.
+Trackerın her frame sonucunda aldığı bbox değeri train/video\_1/groundtruth.txt dosyasında ilgili satıra yazılacak. Bu sayede yolo modeli ile beraber tracker kullanarak verileri hızlı bir şekilde etiketlemiş olacağız.
 
-#### Eğer takip etmek istediğiniz nesne açılan ilk framede değilse enter tuşuna basarak nesneyi görene kadar ilerleyebilirsiniz. Etiket işlemini yaptıktan sonra tracker başlayacak ve video akacaktır. Geri gelmek isterseniz A tuşunu kullanabilirsiniz.
+Eğer takip etmek istediğiniz nesne açılan ilk framede değilse enter tuşuna basarak nesneyi görene kadar ilerleyebilirsiniz. Etiket işlemini yaptıktan sonra tracker başlayacak ve video akacaktır. Geri gelmek isterseniz A tuşunu kullanabilirsiniz.
 
-#### \--split test seçmeniz durumunda dizinini verdiğiniz klasördeki videolar karelere ayrılırken karşınıza ilk kare açılacak ve takip edilmesini istediğiniz nesnenin seçilmesi istenecek. Seçim yaptıktan sonra enter tuşuna bastığınızda bbox değerleri test/video\_1/groundtruth.txt dosyasına kaydedilecektir.
+\--split test seçmeniz durumunda dizinini verdiğiniz klasördeki videolar karelere ayrılırken karşınıza ilk kare açılacak ve takip edilmesini istediğiniz nesnenin seçilmesi istenecek. Seçim yaptıktan sonra enter tuşuna bastığınızda bbox değerleri test/video\_1/groundtruth.txt dosyasına kaydedilecektir.
 
-#### Eğer takip etmek istediğiniz nesne ilk karede yok ise seçim yapmadan enter tuşuna basarak ilerleyebilirsiniz. Nesne kareye girdiğinde seçim yaparak enter tuşuna bastığınızda bbox değerleri aynı şekilde groundtruth.txt dosyasına kaydedilecektir. Geri gelmek isterseniz A tuşunu kullanabilirsiniz.
+Eğer takip etmek istediğiniz nesne ilk karede yok ise seçim yapmadan enter tuşuna basarak ilerleyebilirsiniz. Nesne kareye girdiğinde seçim yaparak enter tuşuna bastığınızda bbox değerleri aynı şekilde groundtruth.txt dosyasına kaydedilecektir. Geri gelmek isterseniz A tuşunu kullanabilirsiniz.
 
 ### absence.label -> Takip edilecek nesnenin kare içerisinde olup (0) olmadığı (1) bilgisini her kare için bir satırda saklar.
 ### cover.label -> Takip edilecek nesnenin önünde engel olup (1) olmadığı (0) bilgisini saklar.
