@@ -78,7 +78,6 @@ def select_roi_with_overlay(image):
             cv2.destroyWindow("Overlay")
             return (0, 0, 0, 0)
 
-
 def is_box_out_of_bounds(x, y, w, h, img_w, img_h, margin=5):
     return (x <= margin or y <= margin or
             (x + w) >= (img_w - margin) or
@@ -105,14 +104,14 @@ def update_label_files(images_dir, bboxes):
         # absence.label
         if (x, y, w, h) == (0, 0, 0, 0):
             absence_lines.append("1\n")
+            cut_lines.append("0\n")
         else:
             absence_lines.append("0\n")
-
-        # cut_by_image.label
-        if w > 0 and h > 0 and is_box_out_of_bounds(x, y, w, h, img_w, img_h):
-            cut_lines.append("1\n")
-        else:
-            cut_lines.append("0\n")
+            # cut_by_image.label
+            if w > 0 and h > 0 and is_box_out_of_bounds(x, y, w, h, img_w, img_h):
+                cut_lines.append("1\n")
+            else:
+                cut_lines.append("0\n")
 
         # cover.label her zaman 0
         cover_lines.append("0\n")

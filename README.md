@@ -80,7 +80,7 @@ Eğer takip etmek istediğiniz nesne ilk karede yok ise seçim yapmadan enter tu
 ## 2) visualize\_groundtruth.py
 
 Bu dosya ile bir önceki adımda groundtruth.txt dosyasına kaydettiğiniz bbox değerlerini frameler üzerinde görebilirsiniz.
-Güncellemek istediğiniz label için önce C tuşuna basarak bbox temizleyin. Sonrasında W tuşuna basarak seçim yapabilirsiniz. Seçiminiz bittiğinde enter tuşuna basarsanız bbox değerleriniz groundtruth.txt dosyasındaki ilgili satırda güncellenecektir. Seçim yapmak istemiyorsanız enter basarak ilerleyebilirsiniz. Geri gelmek için A tuşunu kullanabilirsiniz.
+Güncellemek istediğiniz label için önce C tuşuna basarak bbox temizleyin. Sonrasında W tuşuna basarak seçim yapabilirsiniz. Seçiminiz bittiğinde enter tuşuna basarsanız bbox değerleriniz groundtruth.txt dosyasından ve buna bağlı diğer .label dosyalarındaki ilgili satırlardan güncellenecektir. Seçim yapmak istemiyorsanız enter basarak ilerleyebilirsiniz. Geri gelmek için A tuşunu kullanabilirsiniz.
 
 ### Çalıştırma Komutu:
 
