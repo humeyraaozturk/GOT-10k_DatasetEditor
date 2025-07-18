@@ -3,20 +3,38 @@ import os
 import argparse
 from natsort import natsorted
 
+import re
+
 def read_groundtruth(gt_path):
     bboxes = []
     with open(gt_path, "r") as f:
         for line in f:
-            parts = line.strip().split()
-            if len(parts) == 4:
-                x, y, w, h = map(float, parts)
-                bboxes.append((x, y, w, h))
+            line = line.strip()
+            if not line:
+                bboxes.append((0.0000,0.0000,0.0000,0.0000))
+                continue
+            # Virgülleri boşlukla değiştir
+            line = line.replace(',', ' ')
+            # Birden fazla boşluğu tek boşluğa indir
+            parts = line.split()
+            if len(parts) != 4:
+                # Son çare: regex ile sayıları çek
+                nums = re.findall(r"[-+]?\d*\.?\d+(?:[eE][-+]?\d+)?", line)
+                if len(nums) == 4:
+                    parts = nums
+                else:
+                    print(f"[!] Skipping bad gt line: {line}")
+                    bboxes.append((0.0000,0.0000,0.0000,0.0000))
+                    continue
+            x, y, w, h = map(float, parts)
+            bboxes.append((x, y, w, h))
     return bboxes
+
 
 def write_groundtruth(gt_path, bboxes):
     with open(gt_path, "w") as f:
         for x, y, w, h in bboxes:
-            f.write(f"{x:.2f} {y:.2f} {w:.2f} {h:.2f}\n")
+            f.write(f"{x:.4f},{y:.4f},{w:.4f},{h:.4f}\n")
 
 def resize_for_display(frame, max_width=800, max_height=600):
     h, w = frame.shape[:2]
@@ -102,7 +120,7 @@ def update_label_files(images_dir, bboxes):
         x, y, w, h = bbox
 
         # absence.label
-        if (x, y, w, h) == (0, 0, 0, 0):
+        if (x, y, w, h) == (0.0000,0.0000,0.0000,0.0000):
             absence_lines.append("1\n")
             cut_lines.append("0\n")
         else:
@@ -139,7 +157,7 @@ def main(images_dir):
 
     bboxes = read_groundtruth(gt_path)
     total_frames = min(len(image_files), len(bboxes))
-
+    print(f"[i] Total frames: {total_frames}")
     idx = 0
     while 0 <= idx < total_frames:
         img_path = os.path.join(images_dir, image_files[idx])

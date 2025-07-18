@@ -18,20 +18,20 @@ def main(yolo_dir, img_width, img_height, output_file):
                 line = f.readline().strip()
                 if not line:
                     # Dosya boşsa 0 bbox yaz
-                    out_f.write("0 0 0 0\n")
+                    out_f.write("0.0000,0.0000,0.0000,0.0000\n")
                     continue
 
                 parts = line.split()
                 if len(parts) < 5:
                     print(f"[!] Warning: '{file_name}' Unexpected format")
-                    out_f.write("0 0 0 0\n")
+                    out_f.write("0.0000,0.0000,0.0000,0.0000\n")
                     continue
 
                 _, x_center, y_center, w, h = parts
                 x_center, y_center, w, h = map(float, (x_center, y_center, w, h))
                 x, y, width, height = yolo_to_got10k(x_center, y_center, w, h, img_width, img_height)
 
-                out_f.write(f"{x:.2f} {y:.2f} {width:.2f} {height:.2f}\n")
+                out_f.write(f"{x:.4f},{y:.4f},{width:.4f},{height:.4f}\n")
 
     print(f"[✓] Translation completed, Output: {output_file}")
 

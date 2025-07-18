@@ -13,10 +13,25 @@ def read_groundtruth(gt_path):
     bboxes = []
     with open(gt_path, "r") as f:
         for line in f:
-            parts = line.strip().split()
-            if len(parts) == 4:
-                x, y, w, h = map(int, map(float, parts))
-                bboxes.append((x, y, w, h))
+            line = line.strip()
+            if not line:
+                bboxes.append((0.0000,0.0000,0.0000,0.0000))
+                continue
+            # Virgülleri boşlukla değiştir
+            line = line.replace(',', ' ')
+            # Birden fazla boşluğu tek boşluğa indir
+            parts = line.split()
+            if len(parts) != 4:
+                # Son çare: regex ile sayıları çek
+                nums = re.findall(r"[-+]?\d*\.?\d+(?:[eE][-+]?\d+)?", line)
+                if len(nums) == 4:
+                    parts = nums
+                else:
+                    print(f"[!] Skipping bad gt line: {line}")
+                    bboxes.append((0.0000,0.0000,0.0000,0.0000))
+                    continue
+            x, y, w, h = map(float, parts)
+            bboxes.append((x, y, w, h))
     return bboxes
 
 def crop_frame(frame, bbox):

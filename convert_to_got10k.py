@@ -48,7 +48,7 @@ def write_labels_train_val(output_dir, gt, absence, cover, cut):
     gt, absence, cover, cut = gt[:n], absence[:n], cover[:n], cut[:n]
 
     write_lines(os.path.join(output_dir, "groundtruth.txt"),
-                [f"{x} {y} {w} {h}\n" for (x, y, w, h) in gt])
+                [f"{x:.4f},{y:.4f},{w:.4f},{h:.4f}\n" for (x, y, w, h) in gt])
     write_lines(os.path.join(output_dir, "absence.label"),
                 [f"{v}\n" for v in absence])
     write_lines(os.path.join(output_dir, "cover.label"),
@@ -59,7 +59,7 @@ def write_labels_train_val(output_dir, gt, absence, cover, cut):
 def write_labels_test(output_dir, x, y, w, h):
     # GOT-10k test: only first frame GT (one line)
     with open(os.path.join(output_dir, "groundtruth.txt"), "w") as f:
-        f.write(f"{x} {y} {w} {h}\n")
+        f.write(f"{x:.4f},{y:.4f},{w:.4f},{h:.4f}\n")
 
 def interactive_roi_select_on_scaled(frame_scaled, scale, yolo_results=None,
                                      win_name="ROI Select",
@@ -200,7 +200,7 @@ def interactive_tracking_and_labeling(video_path, output_dir, model_path, desire
         elif key in (13, 10): 
             out_name = f"{save_idx:08d}.jpg"
             cv2.imwrite(os.path.join(output_dir, out_name), frame)
-            gt.append((0,0,0,0))
+            gt.append((0.0000,0.0000,0.0000,0.0000))
             absence.append(1)
             cover.append(0)
             cut.append(0)
@@ -233,7 +233,7 @@ def interactive_tracking_and_labeling(video_path, output_dir, model_path, desire
                 print("[!] ROI not selected. Marking skipped.")
                 out_name = f"{save_idx:08d}.jpg"
                 cv2.imwrite(os.path.join(output_dir, out_name), frame)
-                gt.append((0,0,0,0))
+                gt.append((0.0000,0.0000,0.0000,0.0000))
                 absence.append(1)
                 cover.append(0)
                 cut.append(0)
@@ -254,7 +254,7 @@ def interactive_tracking_and_labeling(video_path, output_dir, model_path, desire
                 print("[!] No matching det. Skip.")
                 out_name = f"{save_idx:08d}.jpg"
                 cv2.imwrite(os.path.join(output_dir, out_name), frame)
-                gt.append((0,0,0,0))
+                gt.append((0.0000,0.0000,0.0000,0.0000))
                 absence.append(1)
                 cover.append(0)
                 cut.append(0)
