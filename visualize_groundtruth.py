@@ -25,37 +25,106 @@ def resize_for_display(frame, max_width=800, max_height=600):
     resized = cv2.resize(frame, (new_w, new_h))
     return resized, scale
 
+drawing = False
+start_x, start_y = -1, -1
+end_x, end_y = -1, -1
 mouse_x, mouse_y = -1, -1
-def mouse_move(event, x, y, flags, param):
-    global mouse_x, mouse_y
-    if event == cv2.EVENT_MOUSEMOVE:
-        mouse_x, mouse_y = x, y
+roi_selected = None
 
-def select_roi_with_overlay(window_name, image):
-    global mouse_x, mouse_y
-    clone = image.copy()
-    cv2.namedWindow(window_name)
-    cv2.setMouseCallback(window_name, mouse_move)
+def mouse_draw(event, x, y, flags, param):
+    global drawing, start_x, start_y, end_x, end_y, roi_selected, mouse_x, mouse_y
+    mouse_x, mouse_y = x, y
+    if event == cv2.EVENT_LBUTTONDOWN:
+        drawing = True
+        start_x, start_y = x, y
+    elif event == cv2.EVENT_MOUSEMOVE and drawing:
+        end_x, end_y = x, y
+    elif event == cv2.EVENT_LBUTTONUP:
+        drawing = False
+        end_x, end_y = x, y
+        roi_selected = (min(start_x, end_x), min(start_y, end_y),
+                        abs(end_x - start_x), abs(end_y - start_y))
 
-    print("[i] Draw a region to select the object, press ENTER to confirm, C to cancel, A to back, or ESC to exit.")
+def select_roi_with_overlay(image):
+    global roi_selected, mouse_x, mouse_y
+    roi_selected = None
+    temp_img = image.copy()
+    h, w = temp_img.shape[:2]
 
-    # OpenCV ROI seçim aracı ile çizgi overlay
+    cv2.namedWindow("Overlay", cv2.WINDOW_NORMAL)
+    cv2.setMouseCallback("Overlay", mouse_draw)
+
+    print("[i] Draw ROI on the scaled image. ENTER = confirm, ESC = cancel")
+
     while True:
-        temp = clone.copy()
+        display = temp_img.copy()
+
+        # Kılavuz çizgiler
         if mouse_x >= 0 and mouse_y >= 0:
-            # Mouse üzerinde çizgiler
-            cv2.line(temp, (mouse_x, 0), (mouse_x, temp.shape[0]), (0, 255, 255), 1)
-            cv2.line(temp, (0, mouse_y), (temp.shape[1], mouse_y), (0, 255, 255), 1)
-        cv2.imshow(window_name, temp)
+            cv2.line(display, (mouse_x, 0), (mouse_x, display.shape[0]), (0, 255, 255), 1)
+            cv2.line(display, (0, mouse_y), (display.shape[1], mouse_y), (0, 255, 255), 1)
+
+        # ROI kutusu
+        if drawing or roi_selected:
+            cv2.rectangle(display, (start_x, start_y), (mouse_x, mouse_y), (0, 255, 0), 2)
+
+        cv2.imshow("Overlay", display)
         key = cv2.waitKey(1) & 0xFF
-        if key == 13 or key == 10:  # ENTER → ROI seç
-            roi = cv2.selectROI(window_name, clone, fromCenter=False, showCrosshair=True)
-            cv2.destroyWindow(window_name)
-            return roi
-        elif key == 27:  # ESC → iptal
-            cv2.destroyWindow(window_name)
+
+        if key in [13, 10]:  # ENTER
+            cv2.destroyWindow("Overlay")
+            return roi_selected if roi_selected else (0, 0, 0, 0)
+        elif key == 27:  # ESC
+            cv2.destroyWindow("Overlay")
             return (0, 0, 0, 0)
 
+
+def is_box_out_of_bounds(x, y, w, h, img_w, img_h, margin=5):
+    return (x <= margin or y <= margin or
+            (x + w) >= (img_w - margin) or
+            (y + h) >= (img_h - margin))
+    
+def update_label_files(images_dir, bboxes):
+    img_files = [f for f in os.listdir(images_dir) if f.lower().endswith(('.jpg','.png','.jpeg','.bmp','.webp'))]
+    img_files = natsorted(img_files)
+    img_path = os.path.join(images_dir, img_files[0])
+    img = cv2.imread(img_path)
+    img_h, img_w = img.shape[:2]
+
+    absence_path = os.path.join(images_dir, "absence.label")
+    cut_path = os.path.join(images_dir, "cut_by_image.label")
+    cover_path = os.path.join(images_dir, "cover.label")
+
+    absence_lines = []
+    cut_lines = []
+    cover_lines = []
+
+    for bbox in bboxes:
+        x, y, w, h = bbox
+
+        # absence.label
+        if (x, y, w, h) == (0, 0, 0, 0):
+            absence_lines.append("1\n")
+        else:
+            absence_lines.append("0\n")
+
+        # cut_by_image.label
+        if w > 0 and h > 0 and is_box_out_of_bounds(x, y, w, h, img_w, img_h):
+            cut_lines.append("1\n")
+        else:
+            cut_lines.append("0\n")
+
+        # cover.label her zaman 0
+        cover_lines.append("0\n")
+
+    with open(absence_path, "w") as f:
+        f.writelines(absence_lines)
+    with open(cut_path, "w") as f:
+        f.writelines(cut_lines)
+    with open(cover_path, "w") as f:
+        f.writelines(cover_lines)
+
+    print("[✓] absence.label, cut_by_image.label, cover.label dosyaları güncellendi.")
 
 def main(images_dir):
     gt_path = os.path.join(images_dir, "groundtruth.txt")
@@ -105,10 +174,11 @@ def main(images_dir):
         elif key == ord('a'):  # Geri
             idx = max(0, idx - 1)
         elif key == ord('c'):  # Label sil
-            bboxes[idx] = (-1.0, -1.0, -1.0, -1.0)
+            bboxes[idx] = (0.0, 0.0, 0.0, 0.0)
             write_groundtruth(gt_path, bboxes)
+            update_label_files(images_dir, bboxes)
         elif key == ord('w'):  # Yeni seçim
-            roi = select_roi_with_overlay("New ROI Selection", resized)
+            roi = select_roi_with_overlay(resized)
             if roi != (0, 0, 0, 0):
                 x_new = roi[0] / scale
                 y_new = roi[1] / scale
@@ -116,6 +186,7 @@ def main(images_dir):
                 h_new = roi[3] / scale
                 bboxes[idx] = (x_new, y_new, w_new, h_new)
                 write_groundtruth(gt_path, bboxes)
+                update_label_files(images_dir, bboxes)
                 print(f"[✓] Frame {idx}: New label saved.")
 
     cv2.destroyAllWindows()
